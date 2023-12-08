@@ -19,7 +19,6 @@ const UserSchema = new Schema({
   },
   userDetailId: {
     type: String,
-    unique: true,
   },
   password: {
     type: String,

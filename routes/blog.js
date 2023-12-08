@@ -13,16 +13,8 @@ const UserDetail = require("../models/UserDetails");
 // ROUTE 1. post Blog Content using : POST "api/blogs/postblogcontent"
 router.post("/postblogcontent", fetchuser, async (req, res) => {
   try {
-    const {
-
-      description,
-      userID,
-      postID,
-      Title,
-      Category,
-      tags,
-      Blog_url,
-    } = req.body;
+    const { description, userID, postID, Title, Category, tags, Blog_url } =
+      req.body;
     // If there are errors , return Bad request and the errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -79,7 +71,7 @@ router.post(
         Category,
         tags,
         Blog_url,
-        view: "0"
+        view: "0",
       });
       const savedblog = await blog.save();
       res.json(savedblog);
@@ -99,8 +91,6 @@ router.post("/getsingleblogcontent", async (req, res) => {
       .populate("blogcontent")
       .populate("author");
 
-    console.log(blogs);
-    console.log("blogs descroption");
     res.json(blogs);
   } catch (error) {
     console.error(error.message);
@@ -126,12 +116,10 @@ router.get("/fetchallblogCards", async (req, res) => {
 
 // ROUTE 2: Put all a blog in the database : POST "/api/blogs/addblog"
 
-router.get("/filterblog", async (req, res) => {
+router.get("/filterblog/:userID", async (req, res) => {
   try {
-    const userID = req.query.userID;
-    const blogs = await blogCard.find({ userID: userID });
-
-    //   console.log(req.user.id)
+    const userID = req.params.userID;
+    const blogs = await blogCard.find({ userID: userID }).populate("author");
 
     res.json(blogs);
   } catch (error) {
@@ -164,7 +152,6 @@ router.put("/updateblog/:id", fetchuser, async (req, res) => {
       newblog.Blog_url = Blog_url;
     }
 
-
     // Find the note to be updated and update it
     let Blog = await blogCard.find({ _id: req.params.id });
     let Blog2 = await blog.find({ _id: blogcontent?._id });
@@ -193,13 +180,12 @@ router.put("/updateblog/:id", fetchuser, async (req, res) => {
   }
 });
 
-
 // ROUTE 4:Delete an existing note using : DELETE "/api/notes/deletenote" .login required
 
 router.delete("/deleteblog/:id", async (req, res) => {
   try {
     // Find the note to be deleted and delete it
-    let blog1 = await blogCard.find({ _id: req.params.id })
+    let blog1 = await blogCard.find({ _id: req.params.id });
     if (!blog1) {
       return res.status(404).send("not found");
     }
@@ -209,12 +195,11 @@ router.delete("/deleteblog/:id", async (req, res) => {
     //   return res.status(401).send("Not Alowed")
     // }
 
-    blog1 = await blogCard.findOneAndDelete({ _id: req.params.id }).populate('blogcontent');
-    console.log(blog1.blogcontent)
+    blog1 = await blogCard
+      .findOneAndDelete({ _id: req.params.id })
+      .populate("blogcontent");
     let blog2 = await blog.findOneAndDelete({ _id: blog1.blogcontent._id });
 
-    console.log(blog1)
-    console.log(blog2)
     return res.json({
       success: "note has been deleted",
       blog1: blog1,
@@ -244,7 +229,8 @@ router.get("/searchForResults/:searchtext", async (req, res) => {
   try {
     const searchtext = req.params.searchtext; // Access the parameter from req.params
     const searchResults = await blogCard
-      .find({ Title: { $regex: searchtext, $options: "i" } }).populate('author')
+      .find({ Title: { $regex: searchtext, $options: "i" } })
+      .populate("author")
       .sort({ view: -1 })
       .limit(10);
 
@@ -262,7 +248,11 @@ router.get("/fetchrandomblog", async (req, res) => {
   try {
     const totalBlogs = await blogCard.countDocuments();
     const randomIndex = Math.floor(Math.random() * totalBlogs);
-    const randomBlog = await blogCard.findOne().populate('author').skip(randomIndex).exec();
+    const randomBlog = await blogCard
+      .findOne()
+      .populate("author")
+      .skip(randomIndex)
+      .exec();
 
     if (randomBlog) {
       res.json(randomBlog);
